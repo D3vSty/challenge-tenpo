@@ -48,7 +48,7 @@ mvn spring-boot:run
     ```bash
     docker-compose logs -f
     ```
-- Para parar y eliminar contenedores/redes:
+5. Para parar y eliminar contenedores/redes:
 
     ```bash
     docker-compose down
