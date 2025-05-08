@@ -1,0 +1,52 @@
+networks:
+  challenge-net:
+    driver: bridge
+
+volumes:
+  db-data:
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: challenge-db
+    restart: always
+    environment:
+      POSTGRES_DB: challenge
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - challenge-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: latest
+    container_name: challenge-api
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/challenge
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_PROFILES_ACTIVE: prod
+    ports:
+      - "8090:8090"
+    networks:
+      - challenge-net
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8090/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
